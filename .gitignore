@@ -1,0 +1,8 @@
+# cpp
+[bB]uild
+Testing/
+.cache/
+
+# nix 
+.direnv/
+result/
