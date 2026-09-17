@@ -1,7 +1,11 @@
 #include "tou/scheduler.h"
 #include <print>
+#include <unistd.h>
 
 int main() {
-    auto scheduler = tou::Scheduler(4);
-    std::println("hello world");
+    tou::Scheduler scheduler;
+    for (auto i = 0; i < 100; i++) {
+        scheduler.queueTask(
+            tou::Task([i] { std::println("executing task {}", i); }));
+    }
 }
