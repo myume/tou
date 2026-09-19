@@ -16,16 +16,16 @@ class Task {
   public:
     Task(std::function<void()> func) : func(func) {};
 
-    void execute() { func(); };
+    void execute() { func(); }
 };
 
 class Scheduler {
   private:
     std::atomic<bool> isRunning = true;
 
-    std::vector<util::Deque<Task>> deques;
+    std::vector<util::Deque<Task, 32>> deques;
     std::vector<std::thread> workers;
-    uint32_t nextWorker = 0;
+    size_t nextWorker = 0;
 
     void processTasks(uint32_t id);
 

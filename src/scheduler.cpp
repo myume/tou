@@ -9,8 +9,9 @@ tou::Scheduler::Scheduler(uint32_t workers) : deques(workers) {
 void tou::Scheduler::processTasks(uint32_t id) {
     auto &deque = this->deques[id];
     while (isRunning) {
-        if (deque) {
-            deque.dequeueEnd().execute();
+        auto task = deque.popBottom();
+        if (task) {
+            task->execute();
         }
     }
 };
@@ -23,7 +24,7 @@ tou::Scheduler::~Scheduler() {
 };
 
 void tou::Scheduler::queueTask(Task task) {
-    this->deques[nextWorker].enqueue(task);
+    this->deques[nextWorker].pushBottom(task);
 
     // round robin style work distribution
     nextWorker = ++nextWorker % workers.size();
