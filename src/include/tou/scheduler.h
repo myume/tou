@@ -4,6 +4,8 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <mutex>
+#include <queue>
 #include <thread>
 #include <vector>
 
@@ -23,11 +25,17 @@ class Scheduler {
   private:
     std::atomic<bool> isRunning = true;
 
-    std::vector<util::Deque<Task, 32>> deques;
+    std::vector<std::unique_ptr<util::Deque<Task>>> deques;
     std::vector<std::thread> workers;
-    size_t nextWorker = 0;
+
+    // work that is yet to be taken by a worker
+    std::queue<Task> pendingWork;
+    std::mutex pendingLock;
 
     void processTasks(uint32_t id);
+
+    // inject tasks into worker deques
+    void injectTasks(uint32_t id);
 
   public:
     // Spawn a scheduler with the specified number of workers
@@ -42,7 +50,7 @@ class Scheduler {
     Scheduler &operator=(Scheduler &&) = delete;
 
     // Submit a task to be queued for execution on a worker
-    void queueTask(Task task);
+    void queueTask(Task &&task);
 };
 
 } // namespace tou

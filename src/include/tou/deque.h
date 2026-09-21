@@ -1,56 +1,62 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdlib>
-#include <mutex>
+#include <cwchar>
 #include <optional>
 
 namespace tou::util {
 
-template <typename T, size_t N>
+template <typename T>
 class Deque {
   private:
-    std::mutex mutex;
-    size_t top = 0;
-    size_t bottom = 0;
-    size_t size;
+    std::atomic<size_t> top = 0;
+    std::atomic<size_t> bottom = 0;
+    std::atomic<size_t> cap;
     T *data;
 
     void grow() {
-        size *= 2;
-        auto newArr = static_cast<T *>(malloc(sizeof(T) * size));
-        for (auto i = top; i < bottom; i++) {
-            newArr[i % size] = data[i % size];
+        auto newCapacity = cap * 2;
+        auto newArr = static_cast<T *>(malloc(sizeof(T) * newCapacity));
+        for (auto i = top.load(); i < bottom; i++) {
+            newArr[i % newCapacity] = data[i % cap];
         }
         free(data);
         data = newArr;
+        cap = newCapacity;
     }
 
   public:
-    Deque(size_t initialSize = N)
+    explicit Deque(size_t initialSize)
         : data(static_cast<T *>(malloc(sizeof(T) * initialSize))),
-          size(initialSize) {};
+          cap(initialSize) {};
+
     ~Deque() { free(data); }
 
     void pushBottom(T element) {
-        std::scoped_lock<std::mutex> scoped(mutex);
-        if (top - bottom == size)
+        if (bottom - top == cap)
             grow();
 
-        data[bottom++ % size] = element;
+        data[bottom++ % cap] = element;
     };
 
-    std::optional<T> steal() {};
-
     std::optional<T> popBottom() {
-        std::scoped_lock<std::mutex> scoped(mutex);
         if (empty())
             return std::nullopt;
 
-        return data[--bottom % size];
+        return data[--bottom % cap];
+    };
+
+    std::optional<T> steal() {
+        if (empty())
+            return std::nullopt;
     };
 
     bool empty() { return top == bottom; }
+
+    size_t capacity() { return cap; }
+    size_t size() { return top - bottom; }
 };
 
 } // namespace tou::util

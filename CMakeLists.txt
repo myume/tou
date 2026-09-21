@@ -6,3 +6,7 @@ set (CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(src)
 add_subdirectory(bench)
+
+if (TEST)
+    add_subdirectory(tests)
+endif()
